@@ -1,12 +1,36 @@
-import React from 'react';
-import {SafeAreaView, ScrollView} from 'react-native';
+import React, {useState, useCallback} from 'react';
+import {Alert, SafeAreaView, ScrollView} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import Checkbox from '../../components/Checkbox';
 
-import {Container, Title, Subtitle, CenteredView} from './styles';
+import {
+  Container,
+  Title,
+  Subtitle,
+  CenteredView,
+  TermsView,
+  TermsText,
+  TermsTextBold,
+} from './styles';
 
 const SignUp: React.FC = () => {
+  const [terms, setTerms] = useState(false);
+  const nav = useNavigation();
+
+  const acceptTerms = useCallback(() => {
+    setTerms(!terms);
+  }, [terms]);
+
+  const register = useCallback(() => {
+    Alert.alert(
+      'Pronto',
+      'Cadastro realizado com sucesso, já podes fazer login',
+    );
+    nav.navigate('SignIn');
+  }, [nav]);
   return (
     <>
       <Container>
@@ -34,8 +58,14 @@ const SignUp: React.FC = () => {
               title="Confirmar Senha"
             />
 
+            <TermsView>
+              <Checkbox checked={terms} onPress={acceptTerms} />
+              <TermsText>Ao criar sua conta voce concorda com os</TermsText>
+            </TermsView>
+            <TermsTextBold>Termos e Condições</TermsTextBold>
+
             <CenteredView>
-              <Button title="Cadastrar" onPress={() => {}} />
+              <Button disabled={terms} title="Cadastrar" onPress={register} />
             </CenteredView>
           </ScrollView>
         </SafeAreaView>

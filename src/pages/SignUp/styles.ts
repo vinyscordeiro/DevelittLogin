@@ -23,3 +23,21 @@ export const CenteredView = styled.View`
   margin: 30px 0 0 -15px;
   align-items: center;
 `;
+
+export const TermsView = styled.View`
+  flex-direction: row;
+  margin: 5px;
+`;
+
+export const TermsText = styled.Text`
+  margin: 0 7px 0 7px;
+  font-family: 'DMSans-Regular';
+  font-size: 14px;
+  color: #747474;
+`;
+
+export const TermsTextBold = styled.Text`
+  font-family: 'DMSans-Bold';
+  font-size: 16px;
+  color: #747474;
+`;
