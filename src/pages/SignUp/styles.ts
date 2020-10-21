@@ -40,4 +40,5 @@ export const TermsTextBold = styled.Text`
   font-family: 'DMSans-Bold';
   font-size: 16px;
   color: #747474;
+  margin-left: 30px;
 `;

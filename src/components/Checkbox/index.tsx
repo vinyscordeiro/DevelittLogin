@@ -13,15 +13,15 @@ const Checkbox: React.FC<CheckboxProps> = ({checked, ...rest}) => {
     return (
       <>
         <Container {...rest}>
-          <Feather name="square" />
+          <Feather name="check-square" size={18} />
         </Container>
       </>
     );
   } else {
     return (
       <>
-        <Container>
-          <Feather name="check-square" size={18} />
+        <Container {...rest}>
+          <Feather name="square" size={18} />
         </Container>
       </>
     );

@@ -1,4 +1,4 @@
-import styled from 'styled-components/native';
+import styled, {css} from 'styled-components/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 export const Container = styled.TouchableOpacity`
@@ -9,6 +9,12 @@ export const Container = styled.TouchableOpacity`
   align-items: center;
   justify-content: center;
   flex-direction: row;
+
+  ${(props) =>
+    props.disabled &&
+    css`
+      background-color: rgba(94, 144, 96, 0.7);
+    `}
 `;
 
 export const ButtonTitle = styled.Text`

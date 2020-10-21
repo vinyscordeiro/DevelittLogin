@@ -1,4 +1,5 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useRef} from 'react';
+import {useField} from '@unform/core';
 
 import {TextInputProps} from 'react-native';
 import {
@@ -11,22 +12,35 @@ import {
 } from './styles';
 
 interface InputProps extends TextInputProps {
-  title: string;
+  name: string;
   icon: string;
+  title: string;
   secret?: boolean;
 }
 
 const Input: React.FC<InputProps> = ({
+  name,
   icon,
   title,
   secret,
   ...rest
 }: InputProps) => {
-  const [visible, setSecret] = useState(!!secret);
+  const inputRef = useRef(null);
+  const {fieldName, defaultValue, registerField} = useField(name);
+
+  const [visible, setVisible] = useState(!!secret);
 
   const changeVisibility = useCallback(() => {
-    setSecret(!visible);
+    setVisible(!visible);
   }, [visible]);
+
+  useEffect(() => {
+    registerField({
+      name: fieldName,
+      ref: inputRef.current,
+      path: 'value',
+    });
+  }, [fieldName, registerField]);
 
   if (secret) {
     return (
@@ -34,7 +48,12 @@ const Input: React.FC<InputProps> = ({
         <Container>
           <ButtonTitle>{title}</ButtonTitle>
           <Icon name={icon} size={24} />
-          <InputBox secureTextEntry={visible} {...rest} />
+          <InputBox
+            defaultValue={defaultValue}
+            ref={inputRef}
+            secureTextEntry={visible}
+            {...rest}
+          />
           {visible ? (
             <Eye onPress={changeVisibility} name="eye" size={24} />
           ) : (
@@ -49,8 +68,13 @@ const Input: React.FC<InputProps> = ({
       <>
         <Container>
           <ButtonTitle>{title}</ButtonTitle>
-          <Icon name={icon} size={24} />
-          <InputBox secureTextEntry={secret} {...rest} />
+          <Icon ref={inputRef} name={icon} size={24} />
+          <InputBox
+            defaultValue={defaultValue}
+            ref={inputRef}
+            secureTextEntry={secret}
+            {...rest}
+          />
           <BottomBorder />
         </Container>
       </>
