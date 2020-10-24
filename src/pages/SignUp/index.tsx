@@ -1,8 +1,12 @@
+/* eslint-disable radix */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useRef} from 'react';
 import {Alert, SafeAreaView, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import * as Yup from 'yup';
+import {FormHandles} from '@unform/core';
+import {Form} from '@unform/mobile';
+import {toDate} from 'date-fns';
 
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -17,50 +21,91 @@ import {
   TermsText,
   TermsTextBold,
 } from './styles';
-import {Form} from '@unform/mobile';
 
+interface signUpFormData {
+  name: string;
+  birthday: string;
+  mail: string;
+  password: string;
+  password_confirmation: string;
+}
 const SignUp: React.FC = () => {
   const [terms, setTerms] = useState(false);
+  const formRef = useRef<FormHandles>(null);
 
   const nav = useNavigation();
 
-  const handleSubmit = useCallback(async (data: object): Promise<void> => {
-    Alert.alert(`${data}`);
-    try {
-      const schema = Yup.object().shape({
-        name: Yup.string().required('Nome obrigatório'),
-        birthday: Yup.date().required('Data Obrigatória'),
-        email: Yup.string()
-          .required('Email obrigatório')
-          .email('Digite um email válido'),
-        password: Yup.string()
-          .required('Senha obrigatório')
-          .min(4, 'No mínimo 4 digitos'),
-        password_confirmation: Yup.string()
-          .required('Senha obrigatório')
-          .min(4, 'No mínimo 4 digitos')
-          .oneOf([Yup.ref('password')], 'Senhas precisam ser iguais'),
-      });
+  const handleSignUp = useCallback(
+    async ({
+      name,
+      birthday,
+      mail,
+      password,
+      password_confirmation,
+    }: signUpFormData): Promise<void> => {
+      try {
+        const birthdayArray = birthday.split('/');
+        const day = parseInt(birthdayArray[0]);
+        const month = parseInt(birthdayArray[1]) - 1;
+        const year = parseInt(birthdayArray[2]);
 
-      await schema.validate(data, {
-        abortEarly: false,
-      });
-    } catch (err) {
-      Alert.alert(err);
-    }
-  }, []);
+        if (
+          birthdayArray[2].length < 2 ||
+          birthdayArray[2].length === 3 ||
+          birthdayArray[2].length > 4
+        ) {
+          throw new Error('Ano inválido');
+        }
+
+        if (month < 1 || month > 12) {
+          throw new Error('Mês inválido');
+        }
+
+        if (day < 1 || day > 31) {
+          throw new Error('Dia inválido');
+        }
+
+        const mountedDate = toDate(new Date(year, month, day));
+        const data = {
+          name,
+          birthday: mountedDate,
+          mail,
+          password,
+          password_confirmation,
+        };
+        Alert.alert(`${mountedDate}`);
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
+          birthday: Yup.date().required('Data Obrigatória'),
+          mail: Yup.string()
+            .required('Email obrigatório')
+            .email('Digite um email válido'),
+          password: Yup.string()
+            .required('Senha obrigatório')
+            .min(4, 'No mínimo 4 digitos'),
+          password_confirmation: Yup.string()
+            .required('Senha obrigatório')
+            .min(4, 'No mínimo 4 digitos')
+            .oneOf([Yup.ref('password')], 'Senhas precisam ser iguais'),
+        });
+
+        await schema.validate(data, {abortEarly: false});
+        Alert.alert(
+          'Cadastro realizado com sucesso',
+          `${data.name} já podes fazer login na sua conta`,
+        );
+        nav.goBack();
+      } catch (err) {
+        Alert.alert(err.title, err.message);
+      }
+    },
+    [nav],
+  );
 
   const acceptTerms = useCallback(() => {
     setTerms(!terms);
   }, [terms]);
 
-  const register = useCallback(() => {
-    Alert.alert(
-      'Pronto',
-      'Cadastro realizado com sucesso, já podes fazer login',
-    );
-    nav.navigate('SignIn');
-  }, [nav]);
   return (
     <>
       <Container>
@@ -68,7 +113,7 @@ const SignUp: React.FC = () => {
         <Subtitle>Crie uma conta para continuar!</Subtitle>
         <SafeAreaView style={{height: 500}}>
           <ScrollView>
-            <Form onSubmit={handleSubmit}>
+            <Form ref={formRef} onSubmit={handleSignUp}>
               <Input
                 name="name"
                 autoCapitalize="words"
@@ -112,7 +157,9 @@ const SignUp: React.FC = () => {
                 <Button
                   disabled={!terms}
                   title="Cadastrar"
-                  onPress={register}
+                  onPress={() => {
+                    formRef.current?.submitForm();
+                  }}
                 />
               </CenteredView>
             </Form>

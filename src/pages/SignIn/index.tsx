@@ -22,7 +22,7 @@ import {
 } from './styles';
 
 interface signInFormData {
-  email: string;
+  mail: string;
   password: string;
 }
 
@@ -34,11 +34,11 @@ const SignIn: React.FC = () => {
   const [fingerprintAvailable, setFingerprintAvailable] = useState(false);
   const [biometry, setBiometry] = useState(false);
 
-  const handleSubmit = useCallback(
+  const handleSignIn = useCallback(
     async (data: signInFormData): Promise<void> => {
       try {
         const schema = Yup.object().shape({
-          email: Yup.string()
+          mail: Yup.string()
             .required('Email obrigatório')
             .email('Digite um email válido'),
           password: Yup.string().required('Senha obrigatória'),
@@ -46,7 +46,6 @@ const SignIn: React.FC = () => {
 
         await schema.validate(data, {abortEarly: false});
 
-        Alert.alert(data.email);
         navigation.navigate('Dashboard');
       } catch (err) {
         Alert.alert(err.title, err.message);
@@ -109,7 +108,7 @@ const SignIn: React.FC = () => {
       <Container>
         <Title>Faça seu Login</Title>
         <Subtitle>Bem-vindo de volta, és bué importante para nós!</Subtitle>
-        <Form ref={formRef} onSubmit={handleSubmit}>
+        <Form ref={formRef} onSubmit={handleSignIn}>
           <Input name="mail" autoCapitalize="none" icon="user" title="Email" />
           <Input
             name="password"

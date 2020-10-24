@@ -18,15 +18,19 @@ interface InputProps extends TextInputProps {
   secret?: boolean;
 }
 
+interface InputValueReference {
+  value: string;
+}
+
 const Input: React.FC<InputProps> = ({
   name,
   icon,
   title,
-  secret,
+  secret = false,
   ...rest
 }: InputProps) => {
-  const inputRef = useRef(null);
-  const {fieldName, defaultValue, registerField} = useField(name);
+  const {fieldName, defaultValue = '', registerField} = useField(name);
+  const inputValueRef = useRef<InputValueReference>({value: defaultValue});
 
   const [visible, setVisible] = useState(!!secret);
 
@@ -37,49 +41,33 @@ const Input: React.FC<InputProps> = ({
   useEffect(() => {
     registerField({
       name: fieldName,
-      ref: inputRef.current,
+      ref: inputValueRef.current,
       path: 'value',
     });
   }, [fieldName, registerField]);
 
-  if (secret) {
-    return (
-      <>
-        <Container>
-          <ButtonTitle>{title}</ButtonTitle>
-          <Icon name={icon} size={24} />
-          <InputBox
-            defaultValue={defaultValue}
-            ref={inputRef}
-            secureTextEntry={visible}
-            {...rest}
-          />
-          {visible ? (
+  return (
+    <>
+      <Container>
+        <ButtonTitle>{title}</ButtonTitle>
+        <Icon name={icon} size={24} />
+        <InputBox
+          defaultValue={defaultValue}
+          secureTextEntry={visible}
+          onChangeText={(value) => {
+            inputValueRef.current.value = value;
+          }}
+          {...rest}
+        />
+        {secret &&
+          (visible ? (
             <Eye onPress={changeVisibility} name="eye" size={24} />
           ) : (
             <Eye onPress={changeVisibility} name="eye-off" size={24} />
-          )}
-          <BottomBorder />
-        </Container>
-      </>
-    );
-  } else {
-    return (
-      <>
-        <Container>
-          <ButtonTitle>{title}</ButtonTitle>
-          <Icon ref={inputRef} name={icon} size={24} />
-          <InputBox
-            defaultValue={defaultValue}
-            ref={inputRef}
-            secureTextEntry={secret}
-            {...rest}
-          />
-          <BottomBorder />
-        </Container>
-      </>
-    );
-  }
+          ))}
+        <BottomBorder />
+      </Container>
+    </>
+  );
 };
-
 export default Input;
