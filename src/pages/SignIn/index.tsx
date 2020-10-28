@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useEffect, useRef} from 'react';
-import {Alert, Switch, View} from 'react-native';
+import {Alert, Switch} from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import {useNavigation} from '@react-navigation/native';
@@ -7,6 +7,7 @@ import {FormHandles} from '@unform/core';
 import {Form} from '@unform/mobile';
 import * as Yup from 'yup';
 
+import {useAuth} from '../../hooks/Context/AuthContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 
@@ -20,9 +21,10 @@ import {
   FingerprintText,
   CenteredView,
 } from './styles';
+import AsyncStorage from '@react-native-community/async-storage';
 
 interface signInFormData {
-  mail: string;
+  email: string;
   password: string;
 }
 
@@ -30,15 +32,17 @@ const SignIn: React.FC = () => {
   const navigation = useNavigation();
   const formRef = useRef<FormHandles>(null);
 
-  const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
-  const [fingerprintAvailable, setFingerprintAvailable] = useState(false);
-  const [biometry, setBiometry] = useState(false);
+  const {signInForm, signInBiometry} = useAuth();
 
-  const handleSignIn = useCallback(
+  const [biometryAvailable, setBiometryAvailable] = useState(false);
+  const [biometryData, setBiometryData] = useState(false);
+  const [biometryEnabled, setBiometryEnabled] = useState(false);
+
+  const handleSignInForm = useCallback(
     async (data: signInFormData): Promise<void> => {
       try {
         const schema = Yup.object().shape({
-          mail: Yup.string()
+          email: Yup.string()
             .required('Email obrigatório')
             .email('Digite um email válido'),
           password: Yup.string().required('Senha obrigatória'),
@@ -46,18 +50,47 @@ const SignIn: React.FC = () => {
 
         await schema.validate(data, {abortEarly: false});
 
+        await signInForm({
+          email: data.email,
+          password: data.password,
+          biometry: biometryEnabled,
+        });
+
         navigation.navigate('Dashboard');
       } catch (err) {
-        Alert.alert(err.title, err.message);
+        if (err instanceof Yup.ValidationError) {
+          Alert.alert('Erro no preenchimento', err.message);
+        } else {
+          Alert.alert(
+            'Erro ao fazer login',
+            'Verifique seus dados e tente novamente',
+          );
+        }
       }
     },
-    [navigation],
+    [biometryEnabled, navigation, signInForm],
   );
+
+  const handleSignInBiometry = useCallback(async () => {
+    const {success} = await LocalAuthentication.authenticateAsync({
+      cancelLabel: 'Cancelar',
+    });
+    if (success) {
+      navigation.navigate('Dashboard');
+    }
+    const token = await AsyncStorage.getItem('@DevLogin:token');
+    if (token) {
+      const tokenParsed = JSON.parse(token);
+      signInBiometry(tokenParsed);
+    } else {
+      throw new Error('Token não encontrado');
+    }
+  }, [navigation, signInBiometry]);
 
   const toggleSwitch = useCallback(async () => {
     const available = await LocalAuthentication.hasHardwareAsync();
     if (available) {
-      setFingerprintEnabled((previousState) => !previousState);
+      setBiometryEnabled((previousState) => !previousState);
     } else {
       Alert.alert(
         'Biometria não disponível',
@@ -70,46 +103,42 @@ const SignIn: React.FC = () => {
     navigation.navigate('SignUp');
   }, [navigation]);
 
-  /*const navigateToDashboard = useCallback(() => {
-    navigation.navigate('Dashboard');
-  }, [navigation]);*/
-
-  useEffect(() => {
-    // Solicitar do banco de dados  SQLite se digital está disponível nesse dispositivo setar na variavel fingerprint available.
-    setFingerprintAvailable(true);
-
-    async function loginWithBiometry() {
-      const {success} = await LocalAuthentication.authenticateAsync();
-
-      if (success) {
-        navigation.navigate('Dashboard');
-      }
-    }
-    if (fingerprintAvailable) {
-      loginWithBiometry();
-    }
-  }, [fingerprintAvailable, navigation]);
-
   useEffect(() => {
     async function haveAvailableBiometry() {
-      const available = await LocalAuthentication.hasHardwareAsync();
-      setBiometry(available);
+      const response = await LocalAuthentication.hasHardwareAsync();
+      setBiometryAvailable(response);
     }
     async function haveAvailableBiometryData() {
-      await LocalAuthentication.isEnrolledAsync();
+      const response = await LocalAuthentication.isEnrolledAsync();
+      setBiometryData(response);
+    }
+    async function haveBiometryEnabled() {
+      const response = await AsyncStorage.getItem('@DevLogin:biometry');
+      if (response) {
+        setBiometryData(JSON.parse(response));
+      }
     }
 
     haveAvailableBiometry();
     haveAvailableBiometryData();
-  }, []);
+    haveBiometryEnabled();
+
+    if (
+      biometryAvailable === true &&
+      biometryData === true &&
+      biometryEnabled === true
+    ) {
+      handleSignInBiometry();
+    }
+  }, [biometryAvailable, biometryData, biometryEnabled, handleSignInBiometry]);
 
   return (
     <>
       <Container>
         <Title>Faça seu Login</Title>
         <Subtitle>Bem-vindo de volta, és bué importante para nós!</Subtitle>
-        <Form ref={formRef} onSubmit={handleSignIn}>
-          <Input name="mail" autoCapitalize="none" icon="user" title="Email" />
+        <Form ref={formRef} onSubmit={handleSignInForm}>
+          <Input name="email" autoCapitalize="none" icon="user" title="Email" />
           <Input
             name="password"
             autoCompleteType="off"
@@ -118,19 +147,17 @@ const SignIn: React.FC = () => {
             secret={true}
           />
 
-          {biometry ? (
+          {biometryAvailable && (
             <FingerprintView>
               <Switch
                 trackColor={{false: '#767577', true: '#5ec22e'}}
                 thumbColor={'#f4f3f4'}
                 ios_backgroundColor="#3e3e3e"
                 onValueChange={toggleSwitch}
-                value={fingerprintEnabled}
+                value={biometryEnabled}
               />
-              <FingerprintText>Ativar uso da digital</FingerprintText>
+              <FingerprintText>Ativar uso da biometria</FingerprintText>
             </FingerprintView>
-          ) : (
-            <View />
           )}
 
           <CenteredView>

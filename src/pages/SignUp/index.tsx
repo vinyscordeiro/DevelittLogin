@@ -8,6 +8,8 @@ import {FormHandles} from '@unform/core';
 import {Form} from '@unform/mobile';
 import {toDate} from 'date-fns';
 
+import api from '../../services/api';
+
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Checkbox from '../../components/Checkbox';
@@ -25,7 +27,7 @@ import {
 interface signUpFormData {
   name: string;
   birthday: string;
-  mail: string;
+  email: string;
   password: string;
   password_confirmation: string;
 }
@@ -39,7 +41,7 @@ const SignUp: React.FC = () => {
     async ({
       name,
       birthday,
-      mail,
+      email,
       password,
       password_confirmation,
     }: signUpFormData): Promise<void> => {
@@ -69,15 +71,15 @@ const SignUp: React.FC = () => {
         const data = {
           name,
           birthday: mountedDate,
-          mail,
+          email,
           password,
           password_confirmation,
         };
-        Alert.alert(`${mountedDate}`);
+
         const schema = Yup.object().shape({
           name: Yup.string().required('Nome obrigatório'),
           birthday: Yup.date().required('Data Obrigatória'),
-          mail: Yup.string()
+          email: Yup.string()
             .required('Email obrigatório')
             .email('Digite um email válido'),
           password: Yup.string()
@@ -90,13 +92,22 @@ const SignUp: React.FC = () => {
         });
 
         await schema.validate(data, {abortEarly: false});
+        await api.post('/user', data);
+
         Alert.alert(
           'Cadastro realizado com sucesso',
           `${data.name} já podes fazer login na sua conta`,
         );
         nav.goBack();
       } catch (err) {
-        Alert.alert(err.title, err.message);
+        if (err instanceof Yup.ValidationError) {
+          Alert.alert('Erro no preenchimento', err.message);
+        } else {
+          Alert.alert(
+            'Erro ao fazer login',
+            'Verifique seus dados e tente novamente',
+          );
+        }
       }
     },
     [nav],
@@ -121,7 +132,7 @@ const SignUp: React.FC = () => {
                 title="Nome"
               />
               <Input
-                name="mail"
+                name="email"
                 autoCapitalize="none"
                 icon="mail"
                 title="Email"

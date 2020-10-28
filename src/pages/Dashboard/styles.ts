@@ -32,6 +32,7 @@ export const WelcomeTitle = styled.Text`
   font-family: 'DMSans-Bold';
   font-size: 26px;
   font-weight: bold;
+  text-align: right;
 `;
 
 export const WelcomeSubTitle = styled.Text`

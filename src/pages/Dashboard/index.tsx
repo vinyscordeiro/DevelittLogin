@@ -1,7 +1,9 @@
 import React, {useCallback} from 'react';
 import {StatusBar} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+
 import Button from '../../components/Button';
+import {useAuth} from '../../hooks/Context/AuthContext';
+
 import {
   Container,
   GreenLargeBubble,
@@ -16,12 +18,13 @@ import {
   Age,
 } from './styles';
 
-const Welcome: React.FC = () => {
-  const navigation = useNavigation();
+const Dashboard: React.FC = () => {
+  const {user, signOut} = useAuth();
+  const firstName = user.name.split(' ');
 
   const logout = useCallback(() => {
-    navigation.navigate('Welcome');
-  }, [navigation]);
+    signOut();
+  }, [signOut]);
 
   return (
     <>
@@ -34,17 +37,21 @@ const Welcome: React.FC = () => {
         <GreenLargeBubble />
         <GreenMediumBubble />
 
-        <WelcomeTitle>Hey Vinicius</WelcomeTitle>
+        {firstName[0] ? (
+          <WelcomeTitle>Hey {firstName[0]}</WelcomeTitle>
+        ) : (
+          <WelcomeTitle>Hey Usuário</WelcomeTitle>
+        )}
         <WelcomeSubTitle>Seja bem-vindo a Develitt</WelcomeSubTitle>
         <CenteredView>
           <UserCard>
             <Title>Dados Pessoais</Title>
             <Subtitle>Nome</Subtitle>
-            <Information>Vinicius Silva Cordeiro</Information>
+            <Information>{user.name}</Information>
             <Subtitle>Email</Subtitle>
-            <Information>vinyscordeiro@gmail.com</Information>
+            <Information>{user.email}</Information>
             <Subtitle>Data de aniversário</Subtitle>
-            <Information>15/04/1998</Information>
+            <Information>{user.birthday}</Information>
             <Age>22 anos e a contar!</Age>
           </UserCard>
           <Button title="Sair" onPress={logout} />
@@ -54,4 +61,4 @@ const Welcome: React.FC = () => {
   );
 };
 
-export default Welcome;
+export default Dashboard;
