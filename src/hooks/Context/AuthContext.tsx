@@ -18,7 +18,6 @@ interface User {
 interface AuthState {
   token: string;
   user: User;
-  biometry: boolean;
 }
 
 interface SignInDTO {
@@ -30,9 +29,8 @@ interface SignInDTO {
 interface AuthContextData {
   user: User;
   signInForm(credentials: SignInDTO): Promise<void>;
-  signInBiometry(token: string): Promise<void>;
+  signInBiometry(): Promise<void>;
   signOut(): Promise<void>;
-  biometry: boolean;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -47,11 +45,13 @@ const AuthProvider: React.FC = ({children}) => {
       const biometry = await AsyncStorage.getItem('@DevLogin:biometry');
 
       if (token && user && biometry) {
+        api.defaults.headers.authorization = `Bearer ${token}`;
         setDados({
           token,
           user: JSON.parse(user),
-          biometry: JSON.parse(biometry),
         });
+      } else {
+        setDados({} as AuthState);
       }
     }
 
@@ -62,43 +62,48 @@ const AuthProvider: React.FC = ({children}) => {
     const response = await api.post('/sessions', data);
     const {token, user} = response.data;
     const {biometry} = data;
-
     await AsyncStorage.setItem('@DevLogin:token', token);
     await AsyncStorage.setItem('@DevLogin:user', JSON.stringify(user));
-    setDados({token, user, biometry});
+    await AsyncStorage.setItem('@DevLogin:biometry', JSON.stringify(biometry));
+    api.defaults.headers.authorization = `Bearer ${token}`;
+    setDados({token, user});
   }, []);
 
-  const signInBiometry = useCallback(
-    async (token: string) => {
-      const response = await api.post('/me', token);
-      const {user} = response.data;
-      const biometry = dados.biometry;
+  const signInBiometry = useCallback(async () => {
+    const token = await AsyncStorage.getItem('@DevLogin:token');
 
-      if (!user) {
-        throw new Error(
-          'Usuário não encontrado com esse token utilize o login com email e senha',
-        );
-      }
+    if (!token) {
+      throw new Error('Token não disponível');
+    }
+    api.defaults.headers.authorization = `Bearer ${token}`;
+    const response = await api.post('/user/me', token);
+    const {user} = response.data;
 
-      await AsyncStorage.setItem('@DevLogin:user', JSON.stringify(user));
-      setDados({token, user, biometry});
-    },
-    [dados.biometry],
-  );
+    if (!user) {
+      throw new Error(
+        'Usuário não encontrado com esse token utilize o login com email e senha',
+      );
+    }
+
+    await AsyncStorage.setItem('@DevLogin:user', JSON.stringify(user));
+    api.defaults.headers.authorization = `Bearer ${token}`;
+    setDados({token, user});
+  }, []);
 
   const signOut = useCallback(async () => {
-    if (dados.biometry) {
-      await AsyncStorage.removeItem('@DevLogin:token');
-      setDados({
-        user: {} as User,
-        biometry: dados.biometry,
-        token: dados.token,
-      });
-    } else {
-      await AsyncStorage.multiRemove(['@DevLogin:token', '@DevLogin:user']);
+    const storageResponse = await AsyncStorage.getItem('@DevLogin:biometry');
+    if (storageResponse) {
+      const biometry = JSON.parse(storageResponse);
+      if (biometry) {
+        await AsyncStorage.removeItem('@DevLogin:user');
+        setDados({} as AuthState);
+        return;
+      }
     }
+
+    await AsyncStorage.multiRemove(['@DevLogin:token', '@DevLogin:user']);
     setDados({} as AuthState);
-  }, [dados.biometry, dados.token]);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -107,7 +112,6 @@ const AuthProvider: React.FC = ({children}) => {
         signInForm,
         signInBiometry,
         signOut,
-        biometry: dados.biometry,
       }}>
       {children}
     </AuthContext.Provider>

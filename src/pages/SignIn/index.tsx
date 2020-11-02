@@ -1,5 +1,6 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback, useEffect, useRef} from 'react';
-import {Alert, Switch} from 'react-native';
+import {Alert, Switch, KeyboardAvoidingView, ScrollView} from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import {useNavigation} from '@react-navigation/native';
@@ -36,6 +37,7 @@ const SignIn: React.FC = () => {
 
   const [biometryAvailable, setBiometryAvailable] = useState(false);
   const [biometryData, setBiometryData] = useState(false);
+  const [biometryActive, setbiometryActive] = useState(false);
   const [biometryEnabled, setBiometryEnabled] = useState(false);
 
   const handleSignInForm = useCallback(
@@ -53,10 +55,8 @@ const SignIn: React.FC = () => {
         await signInForm({
           email: data.email,
           password: data.password,
-          biometry: biometryEnabled,
+          biometry: biometryActive,
         });
-
-        navigation.navigate('Dashboard');
       } catch (err) {
         if (err instanceof Yup.ValidationError) {
           Alert.alert('Erro no preenchimento', err.message);
@@ -68,7 +68,7 @@ const SignIn: React.FC = () => {
         }
       }
     },
-    [biometryEnabled, navigation, signInForm],
+    [biometryActive, signInForm],
   );
 
   const handleSignInBiometry = useCallback(async () => {
@@ -76,21 +76,14 @@ const SignIn: React.FC = () => {
       cancelLabel: 'Cancelar',
     });
     if (success) {
-      navigation.navigate('Dashboard');
+      signInBiometry();
     }
-    const token = await AsyncStorage.getItem('@DevLogin:token');
-    if (token) {
-      const tokenParsed = JSON.parse(token);
-      signInBiometry(tokenParsed);
-    } else {
-      throw new Error('Token não encontrado');
-    }
-  }, [navigation, signInBiometry]);
+  }, [signInBiometry]);
 
   const toggleSwitch = useCallback(async () => {
     const available = await LocalAuthentication.hasHardwareAsync();
     if (available) {
-      setBiometryEnabled((previousState) => !previousState);
+      setbiometryActive((previousState) => !previousState);
     } else {
       Alert.alert(
         'Biometria não disponível',
@@ -114,8 +107,11 @@ const SignIn: React.FC = () => {
     }
     async function haveBiometryEnabled() {
       const response = await AsyncStorage.getItem('@DevLogin:biometry');
+      if (!response) {
+        Alert.alert('Não há resposta');
+      }
       if (response) {
-        setBiometryData(JSON.parse(response));
+        setBiometryEnabled(JSON.parse(response));
       }
     }
 
@@ -137,42 +133,53 @@ const SignIn: React.FC = () => {
       <Container>
         <Title>Faça seu Login</Title>
         <Subtitle>Bem-vindo de volta, és bué importante para nós!</Subtitle>
-        <Form ref={formRef} onSubmit={handleSignInForm}>
-          <Input name="email" autoCapitalize="none" icon="user" title="Email" />
-          <Input
-            name="password"
-            autoCompleteType="off"
-            icon="lock"
-            title="Senha"
-            secret={true}
-          />
-
-          {biometryAvailable && (
-            <FingerprintView>
-              <Switch
-                trackColor={{false: '#767577', true: '#5ec22e'}}
-                thumbColor={'#f4f3f4'}
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={toggleSwitch}
-                value={biometryEnabled}
+        <KeyboardAvoidingView style={{flex: 1}} enabled>
+          <ScrollView>
+            <Form ref={formRef} onSubmit={handleSignInForm}>
+              <Input
+                name="email"
+                autoCapitalize="none"
+                icon="user"
+                title="Email"
               />
-              <FingerprintText>Ativar uso da biometria</FingerprintText>
-            </FingerprintView>
-          )}
+              <Input
+                name="password"
+                autoCompleteType="off"
+                icon="lock"
+                title="Senha"
+                secret={true}
+              />
 
-          <CenteredView>
-            <Button
-              title="ENTRAR"
-              onPress={() => {
-                formRef.current?.submitForm();
-              }}
-            />
-            <SignUpTitle>Não tem conta ainda?</SignUpTitle>
-            <SignUpTitleBold onPress={navigateToSignUp}>
-              Cadastre-se
-            </SignUpTitleBold>
-          </CenteredView>
-        </Form>
+              {biometryAvailable && (
+                <FingerprintView>
+                  <Switch
+                    trackColor={{false: '#767577', true: '#5ec22e'}}
+                    thumbColor={'#f4f3f4'}
+                    ios_backgroundColor="#3e3e3e"
+                    onValueChange={toggleSwitch}
+                    value={biometryActive}
+                  />
+                  <FingerprintText>Ativar uso da biometria</FingerprintText>
+                </FingerprintView>
+              )}
+
+              <CenteredView>
+                <Button
+                  title="ENTRAR"
+                  onPress={() => {
+                    formRef.current?.submitForm();
+                  }}
+                />
+                <SignUpTitle onPress={navigateToSignUp}>
+                  Não tem conta ainda?
+                </SignUpTitle>
+                <SignUpTitleBold onPress={navigateToSignUp}>
+                  Cadastre-se
+                </SignUpTitleBold>
+              </CenteredView>
+            </Form>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Container>
     </>
   );

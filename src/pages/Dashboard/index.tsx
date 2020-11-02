@@ -3,11 +3,13 @@ import {StatusBar} from 'react-native';
 
 import Button from '../../components/Button';
 import {useAuth} from '../../hooks/Context/AuthContext';
+import {formattedDate, age} from '../../utils/DateConvert';
 
 import {
   Container,
   GreenLargeBubble,
   GreenMediumBubble,
+  WelcomeView,
   WelcomeTitle,
   WelcomeSubTitle,
   CenteredView,
@@ -20,7 +22,11 @@ import {
 
 const Dashboard: React.FC = () => {
   const {user, signOut} = useAuth();
-  const firstName = user.name.split(' ');
+  const nameArray = user.name ? user.name.split(' ') : ['Usuário'];
+  const firstName = nameArray[0];
+  const date = user.birthday;
+  const stringDate = formattedDate(date);
+  const userAge = age(user.birthday);
 
   const logout = useCallback(() => {
     signOut();
@@ -36,13 +42,10 @@ const Dashboard: React.FC = () => {
       <Container>
         <GreenLargeBubble />
         <GreenMediumBubble />
-
-        {firstName[0] ? (
-          <WelcomeTitle>Hey {firstName[0]}</WelcomeTitle>
-        ) : (
-          <WelcomeTitle>Hey Usuário</WelcomeTitle>
-        )}
-        <WelcomeSubTitle>Seja bem-vindo a Develitt</WelcomeSubTitle>
+        <WelcomeView>
+          <WelcomeTitle>Hey {firstName}</WelcomeTitle>
+          <WelcomeSubTitle>Seja bem-vindo a Develitt</WelcomeSubTitle>
+        </WelcomeView>
         <CenteredView>
           <UserCard>
             <Title>Dados Pessoais</Title>
@@ -51,8 +54,12 @@ const Dashboard: React.FC = () => {
             <Subtitle>Email</Subtitle>
             <Information>{user.email}</Information>
             <Subtitle>Data de aniversário</Subtitle>
-            <Information>{user.birthday}</Information>
-            <Age>22 anos e a contar!</Age>
+            <Information>{`${stringDate}`}</Information>
+            {userAge < 0 ? (
+              <Age> {'Após o nascimento começaremos a contar!'}</Age>
+            ) : (
+              <Age> {`${userAge} anos e a contar!`}</Age>
+            )}
           </UserCard>
           <Button title="Sair" onPress={logout} />
         </CenteredView>

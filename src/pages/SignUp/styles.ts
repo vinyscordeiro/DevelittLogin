@@ -1,4 +1,5 @@
 import styled from 'styled-components/native';
+import Button from '../../components/Button/index';
 
 export const Container = styled.View`
   flex: 1;
@@ -41,4 +42,8 @@ export const TermsTextBold = styled.Text`
   font-size: 16px;
   color: #747474;
   margin-left: 30px;
+`;
+
+export const ButtonSignUp = styled(Button)`
+  margin-bottom: 25px;
 `;

@@ -26,21 +26,22 @@ export const GreenMediumBubble = styled.View`
   height: 239px;
   border-radius: 130px;
 `;
+export const WelcomeView = styled.View`
+  margin: 105px 0 20px 0px;
+  align-items: flex-start;
+  width: 270px;
+`;
 
 export const WelcomeTitle = styled.Text`
-  margin: 110px 112px 0 0;
   font-family: 'DMSans-Bold';
   font-size: 26px;
   font-weight: bold;
-  text-align: right;
 `;
 
 export const WelcomeSubTitle = styled.Text`
-  margin: 10px 15px 40px 15px;
+  margin: 10px 0 15px 0;
   font-size: 18px;
   font-family: 'DMSans-Regular';
-  width: 270px;
-  text-align: center;
 `;
 export const CenteredView = styled.View`
   align-items: center;
@@ -74,10 +75,12 @@ export const Subtitle = styled.Text`
 export const Information = styled.Text`
   font-family: 'DMSans-Regular';
   font-size: 18px;
+  text-align: center;
 `;
 
 export const Age = styled.Text`
   margin: 15px 0;
   font-family: 'DMSans-Bold';
   font-size: 18px;
+  text-align: center;
 `;

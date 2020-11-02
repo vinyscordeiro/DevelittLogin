@@ -1,16 +1,14 @@
-/* eslint-disable radix */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback, useRef} from 'react';
-import {Alert, SafeAreaView, ScrollView} from 'react-native';
+import {Alert, KeyboardAvoidingView, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import * as Yup from 'yup';
 import {FormHandles} from '@unform/core';
 import {Form} from '@unform/mobile';
-import {toDate} from 'date-fns';
 
 import api from '../../services/api';
+import {convertToDate} from '../../utils/DateConvert';
 
-import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Checkbox from '../../components/Checkbox';
 
@@ -22,6 +20,7 @@ import {
   TermsView,
   TermsText,
   TermsTextBold,
+  ButtonSignUp,
 } from './styles';
 
 interface signUpFormData {
@@ -46,28 +45,7 @@ const SignUp: React.FC = () => {
       password_confirmation,
     }: signUpFormData): Promise<void> => {
       try {
-        const birthdayArray = birthday.split('/');
-        const day = parseInt(birthdayArray[0]);
-        const month = parseInt(birthdayArray[1]) - 1;
-        const year = parseInt(birthdayArray[2]);
-
-        if (
-          birthdayArray[2].length < 2 ||
-          birthdayArray[2].length === 3 ||
-          birthdayArray[2].length > 4
-        ) {
-          throw new Error('Ano inválido');
-        }
-
-        if (month < 1 || month > 12) {
-          throw new Error('Mês inválido');
-        }
-
-        if (day < 1 || day > 31) {
-          throw new Error('Dia inválido');
-        }
-
-        const mountedDate = toDate(new Date(year, month, day));
+        const mountedDate = convertToDate(birthday);
         const data = {
           name,
           birthday: mountedDate,
@@ -104,7 +82,7 @@ const SignUp: React.FC = () => {
           Alert.alert('Erro no preenchimento', err.message);
         } else {
           Alert.alert(
-            'Erro ao fazer login',
+            'Erro ao fazer o cadastro',
             'Verifique seus dados e tente novamente',
           );
         }
@@ -122,7 +100,7 @@ const SignUp: React.FC = () => {
       <Container>
         <Title>Vamos lá</Title>
         <Subtitle>Crie uma conta para continuar!</Subtitle>
-        <SafeAreaView style={{height: 500}}>
+        <KeyboardAvoidingView style={{flex: 1}} enabled>
           <ScrollView>
             <Form ref={formRef} onSubmit={handleSignUp}>
               <Input
@@ -160,12 +138,14 @@ const SignUp: React.FC = () => {
 
               <TermsView>
                 <Checkbox checked={terms} onPress={acceptTerms} />
-                <TermsText>Ao criar sua conta voce concorda com os</TermsText>
+                <TermsText onPress={acceptTerms}>
+                  Ao criar sua conta voce concorda com os
+                </TermsText>
               </TermsView>
               <TermsTextBold>Termos e Condições</TermsTextBold>
 
               <CenteredView>
-                <Button
+                <ButtonSignUp
                   disabled={!terms}
                   title="Cadastrar"
                   onPress={() => {
@@ -175,7 +155,7 @@ const SignUp: React.FC = () => {
               </CenteredView>
             </Form>
           </ScrollView>
-        </SafeAreaView>
+        </KeyboardAvoidingView>
       </Container>
     </>
   );
