@@ -1,5 +1,7 @@
 # Develitt Login (Frontend)
 
+![](presentation.gif)
+
 An application developed to store use Data to log in on a mobile application using email and password, after the first login and if the user wants to, it is possible to use the fingerprint(Android) or FaceID (IOS). The main goal for this project is to train the whole application making process, including requisites, UX development, backend in node (Express), and frontend using React Native, these kinds of applications are good for studying new repositories and in this case, I used LocalAuthentication from Expo.
 
 If you want to see the design you can look at <a href="https://www.figma.com/file/VaaTuGH98l64ABvH2xCBLt/Untitled?node-id=0%3A1">Figma</a> 
@@ -20,4 +22,5 @@ Install all the dependencies with: yarn
 # Running the app
 To run this app, is needed two terminal instances, the first to run the metro bundler using: yarn start
 The second to run on the device chosen, if is android: yarn android
-if it is IOS: yarn ios
+<br/>
+Or if it is IOS: yarn ios
